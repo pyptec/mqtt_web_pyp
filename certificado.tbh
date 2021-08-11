@@ -1,0 +1,60 @@
+'DEFINES-------------------------------------------------------------
+
+#define MQTT_DEBUG_PRINT 1
+#define MQTT_APP_CLIENT_ID "pypteclonuevoeniot"
+
+const RELE1_GPIO2		=PL_IO_NUM_2
+const RELE2_GPIO3		=PL_IO_NUM_3
+
+
+const MQTT_NAME="security"				'<<<<<<<<====== MQTT server login name
+const MQTT_PASSWORD ="1KL2p4Lw25stjgFf"				'<<<<<<<<====== MQTT server login password
+const OWN_IP="192.168.1.200"				'<<<<<<<<====== This is the IP address of this device
+const SUBSCRIBE_DEMO_GATEWAY="192.168.1.1"	'<<<<<<<<====== Gateway IP address
+const MQTT_SERVER_HOST="35.222.255.152"		'<<<<<<<<====== MQTT server IP
+
+const PAT_GREEN_BLINKING=	"G-~"			'opening TCP link to MQTT server
+const PAT_GREEN_ON=			"G~"			'server connection established
+
+'constantes servidor web
+const almuadilla="23"						' caracter #
+
+'DIRECCIONES DONDE SE ESCRIBE LA CONFIGURACION 
+const EEPROG_ADDR=30						'direccion de habilitacion de programacion on/off
+const EEMQTT_USUARIO_ADDR=50  				'nombre del usuario maximo  8 caracteres
+const EEMQTT_OWN_IP_ADDR=60					'ip de la red local maximo 4 digitos
+const EEMQTT_MASCARA_ADDR=65				'Ip de la mascara de red maximo 4 digitos
+const EEMQTT_GATEWAY_ADDR=70				'puerta de enlace de la red local maximo 4 digitos
+const EEMQTT_HOST_ADDR=75					' direccion ip del broker mqtt maximo 4 digitos
+const EEMQTT_PTO_ADDR =80					' direccion del pto  maximo 4
+const EEMQTT_SUSCRITOR_ADDR=85				'nombre del suscritor maximo 32 digitos
+const EEMQTT_PUBLICADOR_ADDR=118			'nombre del publicador maximo 32 digitos
+const EEMQTT_PASS_ADDR=152					'password del brouker mqtt maximo 12 digitos
+const EEMQTT_CLIENTE_ID_ADDR=166			'Nombre del cliente maximo 18 caracteres
+
+enum tamano_datos_prog_mqtt
+	MQTT_SIZE_CLIENTE=18,
+	MQTT_SIZE_USUARIO=8,
+	MQTT_SIZE_PASS=12,
+	MQTT_SIZE_OWN_IP=4,
+	MQTT_SIZE_MASCARA=4,
+	MQTT_SIZE_GATEWAY=4,
+	MQTT_SIZE_HOST=4,
+	MQTT_SIZE_PTO=4,
+	MQTT_SIZE_SUSCRITOR=32,
+	MQTT_SIZE_PUBLICADOR=32
+end enum
+'declaracion de funciones 
+declare function get_password(byref user_name as string) as string
+declare function get_http_argument(byref http_req_string as string, byref argument as string) as string
+declare sub prog_write_eeprom(addres_byte as byte,data_string as string,longData_byte as byte)
+declare sub prog_write_eeprom_string(addres_byte as byte,data_string as string,longData_byte as byte)
+declare function formateo_argument(byref mqtt_subscritor as string, byref argument as string) as string
+declare sub aceptar_configuracion()
+'INCLUDES------------------------------------------------------------
+
+include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\mqtt\mqtt.tbh"
+include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\sock\sock.tbh"
+'DECLARATIONS--------------------------------------------------------
+
+declare connect_lost as no_yes

@@ -1,0 +1,93 @@
+include "certificado.tbh"
+declare function  prog_read_eeprom(addres_byte as byte,longData_byte as byte)as string
+declare sub prog_write_eeprom_char(addres_byte as byte,data as byte)
+declare sub inicio_servidor_html()
+declare sub inicia_own_mqtt()
+declare function publica_informacion()as boolean
+declare sub inicia_mqtt_configurado()
+'====================================================================
+sub on_sys_init()
+dim EE_lee_prog as byte
+ 'leo la eeprom
+	 EE_lee_prog=prog_read_eeprom(EEPROG_ADDR,1)
+	 
+	 select case EE_lee_prog
+	case 00:
+		sys.debugprint("\n"+"la memoria esta en 0"+"\n")
+			
+		inicia_mqtt_configurado()
+	case 01:
+		 inicia_own_mqtt()
+		sys.debugprint("\n"+"inicia mqtt own la memoria esta en 1"+"\n")
+	case 255:
+		inicio_servidor_html()
+		sys.debugprint("\n"+"inicia servidor html la memoria esta en 255"+"\n")
+	end select
+
+end sub
+
+sub on_sys_timer()
+dim EE_lee_prog as byte
+
+	if connect_lost=YES then
+		'Try to establish the tcp link with mqtt host ...
+		if mqtt_reconnect()=OK then
+			connect_lost=NO
+				
+		end if
+	end if
+	mqtt_proc_timer()
+end sub
+
+sub on_sock_data_arrival()
+	mqtt_proc_data()
+end sub
+
+sub on_button_released()
+	if button.time>4 then
+		prog_write_eeprom_char(EEPROG_ADDR,255)
+		sys.halt
+		sys.reboot
+	end if
+end sub
+'=============================================================
+public function get_password(byref user_name as string) as string
+'This is our own function. We find the password depending on the
+'user name entered
+
+	select case user_name
+	case "admin":
+		get_password = "admin"
+	case "tibbo":
+		get_password = "1234"
+	case "guest":
+		get_password = "qwerty"
+	end select
+end function
+
+
+'=============================================================
+public function get_http_argument(byref http_req_string as string, byref argument as string) as string
+'This is out own function. We parse "HTTP variables" supplied in the HTTP POST request after
+'login and extract user name and password that you have typed into the HTML form.
+
+	dim x, y as byte
+	
+	x = instr(1, http_req_string, argument,1)
+	if (x = 0) then
+		get_http_argument = ""
+		exit function
+	end if
+	
+	x = x + len(argument)
+	
+	y = instr(x, http_req_string, "&",1)
+	if (y = 0) then
+		y = instr(x, http_req_string, " ",1)	
+		if (y = 0) then
+			y = len(argument)
+		end if
+	end if
+	
+	get_http_argument = mid(http_req_string, x, y - x)
+end function

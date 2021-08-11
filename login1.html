@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+	<BODY>
+		<?	'This is BASIC code
+			include "certificado.tbh"
+		
+			dim http_req_string as string
+			dim ip_publica as string
+			dim pto_conexion as string
+			dim ip_propia as string
+			dim ip_mascara as string
+			dim pta_enlace as string
+			dim mqtt_usuario as string
+			dim mqtt_clave as string
+			
+			
+			
+			
+			http_req_string = sock.gethttprqstring(255)+" "		'we add the empty space after the http_req_string so that our parsing function will work correctly under POST.
+			
+			ip_publica      = get_http_argument(http_req_string, "ip_publica=")
+			ip_propia       = get_http_argument(http_req_string, "ip_propia=")
+			ip_mascara      = get_http_argument(http_req_string, "ip_mascara=")
+			pta_enlace      = get_http_argument(http_req_string, "pta_enlace=")
+			pto_conexion    = get_http_argument(http_req_string, "pto_conexion=")
+			mqtt_usuario    = get_http_argument(http_req_string, "mqtt_usuario=")
+			mqtt_clave      = get_http_argument(http_req_string, "mqtt_pasword=")
+			
+			
+			 prog_write_eeprom(EEMQTT_HOST_ADDR,ip_publica,MQTT_SIZE_HOST)
+			 prog_write_eeprom(EEMQTT_OWN_IP_ADDR,ip_propia,MQTT_SIZE_OWN_IP)
+			 prog_write_eeprom(EEMQTT_MASCARA_ADDR,ip_mascara,MQTT_SIZE_MASCARA)
+			 prog_write_eeprom(EEMQTT_GATEWAY_ADDR,pta_enlace,MQTT_SIZE_GATEWAY)
+			 prog_write_eeprom_string(EEMQTT_PTO_ADDR,pto_conexion,MQTT_SIZE_HOST)
+			 prog_write_eeprom_string(EEMQTT_USUARIO_ADDR,mqtt_usuario,MQTT_SIZE_USUARIO)
+			 prog_write_eeprom_string(EEMQTT_PASS_ADDR,mqtt_clave,MQTT_SIZE_PASS)
+			
+			
+		
+			 
+			 	sock.setdata("<a href="+"mqtt.html"+">configuracion MQTT<"
+				+"/a><br>")
+					
+			
+			sock.send
+		
+			'End of BASIC code
+		?>
+	</BODY>
+</HTML>

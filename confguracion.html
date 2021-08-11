@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD W3 HTML//EN">
+<html>
+	<head>
+		<title>Configuración Micro</title>
+		<script>
+			function valideNum(evt){
+				var code = (evt.which) ? evt.which : evt.keyCode;
+				if(code==8) { // backspace.
+				  return false;
+				} else if(code>=48 && code<=57) { // es numero
+				  return true;
+				} else{ // otras letras.
+				  return false;
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<form action="login1.html" method="get">
+		<table>
+			<tr>
+				<td colspan="2" align="center"><h2>Menu Configuracion IP</h2></td>
+			</tr>
+			<tr>
+				<td align="right"><label>Ip Publica Server: </label></td>
+				<td><input type="text" name="ip_publica" id="ip_publica" placeholder="IP Publica Server" maxlength="15"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>Puerta Conexion: </label></td>
+				<td><input type="text" name="pto_conexion" id="pto_conexion" placeholder="Puerto Conexion" onkeypress="return valideNum(event);"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>Ip Propia: </label></td>
+				<td><input type="text" name="ip_propia" id="ip_propia" placeholder="IP Propia" maxlength="15"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>Ip Mascara subred: </label></td>
+				<td><input type="text" name="ip_mascara" id="ip_mascara" placeholder="IP Mascara" maxlength="15"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>Puerta de Enlace: </label></td>
+				<td><input type="text" name="pta_enlace" id="pta_enlace" placeholder="Puerta de Enlace" maxlength="15"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>MQTT Usuario: </label></td>
+				<td><input type="text" name="mqtt_usuario" id="mqtt_usuario" placeholder="MQTT Usuario" maxlength="8"></td>
+			</tr>
+			<tr>
+				<td align="right"><label>MQTT Password: </label></td>
+				<td><input type="password" name="mqtt_pasword" id="mqtt_pasword" placeholder="MQTT Password" maxlength="12"></td>
+			</tr>
+						
+			
+			<tr>
+				<td colspan="2" align="center"><br><button>Guardar</button></td>
+			</tr>
+			</form>
+		</table>
+	</body>
+</html>

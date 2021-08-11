@@ -1,0 +1,303 @@
+include "certificado.tbh"
+
+dim connect_lost as no_yes=NO
+declare sub mqtt_data(byref data as string)
+declare sub prog_write_eeprom_char(addres_byte as byte,data as byte)
+declare sub prog_write_eeprom(addres_byte as byte,data_string as string,longData_byte as byte)
+declare function  prog_read_eeprom(addres_byte as byte,longData_byte as byte)as string
+declare sub prog_write_eeprom_string(addres_byte as byte,data_string as string,longData_byte as byte)
+declare function formateo_argument(byref mqtt_subscritor as string, byref argument as string) as string
+declare sub inicio_servidor_html()
+declare sub aceptar_configuracion()
+declare sub inicia_own_mqtt()
+declare function publica_informacion()as boolean
+declare sub inicia_mqtt_configurado()
+'====================================================================
+'conectado al servidor mqtt propio
+sub callback_mqtt_connect_ok()
+	dim EE_lee_prog as byte
+	pat.play(PAT_GREEN_ON,PL_PAT_CANINT)'led verde prendido
+	mqtt_sub("carullapoloclub/text",QOS_AT_MOST_ONCE) 'v1/devices/cliente1/# LED/#, QOS_AT_LEAST_ONCE
+	 EE_lee_prog=prog_read_eeprom(EEPROG_ADDR,1)
+	 if EE_lee_prog = 1 then
+		publica_informacion()
+		prog_write_eeprom_char(EEPROG_ADDR,0)
+	 end if 
+end sub
+
+sub callback_mqtt_connect_lost()
+	pat.play(PAT_GREEN_BLINKING,PL_PAT_CANINT)
+	connect_lost=YES
+end sub
+
+sub callback_mqtt_notif(byref topic as string,byref data as string)
+	
+	
+	dim x as string
+	
+	x=mid(topic,17,7)
+	sys.debugprint("dato recivido "+x+chr(10)+chr(14))
+	'if x<>STR_LED then exit sub
+	
+	
+	 if x="entrada" then
+		io.num=RELE1_GPIO2
+		mqtt_data(data)
+	else if x="salida" then
+		io.num=RELE2_GPIO3
+		mqtt_data(data)
+	end if
+
+	
+end sub
+
+sub  callback_mqtt_sub_ok()
+end sub
+sub mqtt_data(byref data as string)
+	dim w as word
+	dim y as byte
+	if data ="1" then
+		
+		 w=sys.timercount
+		 io.state= HIGH
+		 y=0
+		 while y<1
+			if sys.timercount-w>1 then
+				y=2
+				io.state= LOW
+				mqtt_publish("carullapoloclub/text","barrera ok",QOS_AT_MOST_ONCE)
+				doevents
+			end if
+		wend
+		 
+	else if data="0" then
+		 io.state=LOW
+	end if
+end sub
+sub mostrar_programacion()
+dim trama as string
+	trama=prog_read_eeprom(EEMQTT_HOST_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("direccion ip host = "+trama +"\n")
+	trama=prog_read_eeprom(EEMQTT_OWN_IP_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("direccion ip propia = "+trama+"\n")
+	trama=prog_read_eeprom(EEMQTT_MASCARA_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("direccion ip mascara = "+trama+"\n")
+	
+	trama=prog_read_eeprom(EEMQTT_GATEWAY_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("puerta de enlace = "+trama+"\n")
+	
+	trama=stor.getdata(EEMQTT_PTO_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("puerto mqtt = "+trama+"\n")
+	
+	trama=stor.getdata(EEMQTT_USUARIO_ADDR,MQTT_SIZE_USUARIO)
+	sys.debugprint("usuario mqtt = "+trama+"\n")
+	
+	trama=stor.getdata(EEMQTT_PASS_ADDR,MQTT_SIZE_PASS)
+	sys.debugprint("password mqtt = "+trama+"\n")
+	
+	
+	trama=stor.getdata(EEMQTT_SUSCRITOR_ADDR,MQTT_SIZE_SUSCRITOR)
+	sys.debugprint("suscritor mqtt = "+trama+"\n")
+	
+	trama=stor.getdata(EEMQTT_PUBLICADOR_ADDR,MQTT_SIZE_SUSCRITOR)
+	sys.debugprint("Publicador mqtt = "+trama+"\n")
+	
+	trama=stor.getdata(EEMQTT_CLIENTE_ID_ADDR,MQTT_SIZE_CLIENTE)
+	sys.debugprint("ID cliente mqtt = "+trama+"\n")
+	
+end sub
+'programo un caracter en la eeprom
+sub prog_write_eeprom_char(addres_byte as byte,data as byte)
+dim  num_data_write as byte
+dim  data_string as string
+data_string=chr(data)
+sys.debugprint("writee_prog = "+data_string)
+num_data_write= stor.setdata(data_string,addres_byte ) 'write EEPROM
+end sub
+'programo las direcciones ip
+sub prog_write_eeprom(addres_byte as byte,data_string as string,longData_byte as byte)
+dim  num_data_write as byte
+dim data_eewrite as string
+
+data_eewrite=ddval(data_string)
+num_data_write= stor.setdata(data_eewrite,addres_byte ) 'write EEPROM
+
+end sub
+'lee las direcciones ip
+function  prog_read_eeprom(addres_byte as byte,longData_byte as byte)as string
+dim data_String as string
+dim lendata as byte
+
+data_String=ddstr(stor.getdata(addres_byte, longData_byte)) 'lee la eeprom
+prog_read_eeprom=data_String'
+
+end function
+'programo en eeprom un string y rellena si faltan caracteres con null
+sub prog_write_eeprom_string(addres_byte as byte,data_string as string,longData_byte as byte)
+dim  num_data_write,lendata,i as byte
+dim data_eewrite as string
+
+data_eewrite=data_string
+'   longitud de la trama
+lendata=len(data_eewrite)
+
+	if lendata <> longData_byte   then
+		for i=lendata to longData_byte 
+		
+		data_string=data_string+"\0"
+		next i
+	data_eewrite=data_string	
+	end if
+num_data_write= stor.setdata(data_eewrite,addres_byte ) 'write EEPROM
+
+end sub
+'formateo de la cadena y modifica el caracter cambiandolo por un (/)
+function formateo_argument(byref mqtt_subscritor as string, byref argument as string) as string
+
+dim j,long_trama,pos,i,frompos as byte
+dim array(4) as byte
+dim cadena as string
+dim validador_almuadilla as string
+			j=5
+			long_trama=len(mqtt_subscritor)
+			for i=1 to j
+			pos=instr(1,mqtt_subscritor,argument,i)
+			 if pos = 0 then
+				j=i
+				exit for
+			end if
+			array(i-1)=pos
+			next i
+				
+			'se lee la cadena desde el caracter 1
+			cadena=""
+			frompos=1
+			for i=0 to j-2
+			cadena = cadena+mid (mqtt_subscritor, frompos, array(i)-frompos)
+			frompos= len (argument)+array(i)
+			cadena =cadena +"/"
+			next i
+			
+			
+			validador_almuadilla=mid (mqtt_subscritor, frompos+1, frompos-array(i))
+			if len(validador_almuadilla)<=2 then
+				if validador_almuadilla = almuadilla then
+				cadena =cadena +"#"
+				else
+				validador_almuadilla=mid (mqtt_subscritor, frompos, frompos-array(i))
+				cadena =cadena+validador_almuadilla
+				end if
+			else
+				validador_almuadilla=mid (mqtt_subscritor, frompos, frompos-array(i))
+				cadena =cadena+validador_almuadilla
+			end if
+
+	
+	
+	formateo_argument = cadena
+end function
+'inicia el servidor html de configuracion
+sub inicio_servidor_html()
+dim f as byte
+		net.ip = "192.168.1.95" '' set IP address <<<<<<<< YOU MIGHT NEED TO CHANGE THIS
+	
+	' set up HTTP sockets (we setup 4 of them)
+	for f = 0 to 3
+		sock.num = f
+		
+		'for HTTP to work, we need to request memory for RX, TX, and VAR buffers
+		sock.rxbuffrq(1)
+		sock.txbuffrq(1)
+		sock.varbuffrq(1)
+		
+		'setup the socket itself
+		sock.protocol=PL_SOCK_PROTOCOL_TCP
+		sock.inconmode=PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+		sock.httpportlist="80"
+	next f
+	
+	'actual buffer memory allocation
+	sys.buffalloc 
+	
+end sub
+sub aceptar_configuracion()
+
+	prog_write_eeprom_char(EEPROG_ADDR,01)
+	sys.halt
+	sys.reboot
+end sub
+'inicio servidor propio mqtt
+sub inicia_own_mqtt()
+dim own_ip as string
+dim own_mask as string
+dim own_gateway as string 
+
+
+	own_ip=prog_read_eeprom(EEMQTT_OWN_IP_ADDR,MQTT_SIZE_HOST)
+	net.ip=own_ip
+	own_mask=prog_read_eeprom(EEMQTT_MASCARA_ADDR,MQTT_SIZE_HOST)
+	net.netmask=own_mask
+	
+	own_gateway=prog_read_eeprom(EEMQTT_GATEWAY_ADDR,MQTT_SIZE_HOST)
+	net.gatewayip=own_gateway
+	
+	
+
+	pat.play(PAT_GREEN_BLINKING,PL_PAT_CANINT)
+
+		
+	io.num=RELE1_GPIO2
+	io.state=LOW
+	io.enabled=YES
+
+
+	io.num=RELE2_GPIO3
+	io.state=LOW
+	io.enabled=YES
+
+	mqtt_start()
+	if mqtt_connect(MQTT_SERVER_HOST,1883,MQTT_NAME,MQTT_PASSWORD,30)=NG then
+		'In here, we cannot make a tcp link to the host ...
+		connect_lost=YES
+	end if
+end sub
+function publica_informacion()as boolean
+dim trama as string 
+	'if connect_lost=NO then
+'direccion del servidor
+	trama=prog_read_eeprom(EEMQTT_HOST_ADDR,MQTT_SIZE_HOST)
+	mqtt_publish("carullapoloclub/text","direccion ip host "+trama,QOS_AT_MOST_ONCE)
+'direccion propia ip	
+	trama=prog_read_eeprom(EEMQTT_OWN_IP_ADDR,MQTT_SIZE_HOST)
+	mqtt_publish("carullapoloclub/text","direccion ip own "+trama,QOS_AT_MOST_ONCE)
+'mascara de conexion
+	trama=prog_read_eeprom(EEMQTT_MASCARA_ADDR,MQTT_SIZE_HOST)
+	mqtt_publish("carullapoloclub/text","direccion mascara "+trama,QOS_AT_MOST_ONCE)
+'puerta de enlace
+	trama=prog_read_eeprom(EEMQTT_GATEWAY_ADDR,MQTT_SIZE_HOST)
+	mqtt_publish("carullapoloclub/text","puerta de enlace "+trama,QOS_AT_MOST_ONCE)
+	
+'puerto de conexion
+	trama=stor.getdata(EEMQTT_PTO_ADDR,MQTT_SIZE_HOST)
+	mqtt_publish("carullapoloclub/text","puerta de conexion "+trama,QOS_AT_MOST_ONCE)
+'usuario
+	trama=stor.getdata(EEMQTT_USUARIO_ADDR,MQTT_SIZE_USUARIO)
+	mqtt_publish("carullapoloclub/text","usuario "+trama,QOS_AT_MOST_ONCE)
+'password
+	trama=stor.getdata(EEMQTT_PASS_ADDR,MQTT_SIZE_PASS)
+	mqtt_publish("carullapoloclub/text","password "+trama,QOS_AT_MOST_ONCE)
+'subscritor mqtt
+	trama=stor.getdata(EEMQTT_SUSCRITOR_ADDR,MQTT_SIZE_SUSCRITOR)
+	mqtt_publish("carullapoloclub/text","subscritor "+trama,QOS_AT_MOST_ONCE)
+'publicador mqtt
+	trama=stor.getdata(EEMQTT_PUBLICADOR_ADDR,MQTT_SIZE_SUSCRITOR)
+	mqtt_publish("carullapoloclub/text","publicador "+trama,QOS_AT_MOST_ONCE)
+'id cliente
+	trama=stor.getdata(EEMQTT_CLIENTE_ID_ADDR,MQTT_SIZE_CLIENTE)
+	mqtt_publish("carullapoloclub/text","id cliente "+trama,QOS_AT_MOST_ONCE)
+	'end if
+	publica_informacion=true
+end function
+sub inicia_mqtt_configurado()
+	
+end sub

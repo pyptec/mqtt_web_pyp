@@ -1,0 +1,40 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+	<BODY>
+		<?	'This is BASIC code
+			include "certificado.tbh"
+		
+			
+			dim http_req_string as string
+			dim mqtt_subscritor as string
+			dim mqtt_publicador as string
+			dim id_cliente as string
+			dim cadena as string
+			
+			
+			
+			
+			
+			http_req_string = sock.gethttprqstring(255)+" "		'we add the empty space after the http_req_string so that our parsing function will work correctly under POST.
+			mqtt_subscritor = get_http_argument(http_req_string, "mqtt_subscritor=")
+			cadena=formateo_argument(mqtt_subscritor,"%2F")
+			prog_write_eeprom_string(EEMQTT_SUSCRITOR_ADDR,cadena,MQTT_SIZE_SUSCRITOR)
+			
+			mqtt_publicador= get_http_argument(http_req_string, "mqtt_publish=")
+			cadena=formateo_argument(mqtt_publicador,"%2F") 
+			prog_write_eeprom_string(EEMQTT_PUBLICADOR_ADDR,cadena,MQTT_SIZE_PUBLICADOR)
+			
+			id_cliente =get_http_argument(http_req_string, "id_cliente=")
+		
+			prog_write_eeprom_string(EEMQTT_CLIENTE_ID_ADDR,id_cliente,MQTT_SIZE_CLIENTE)
+			aceptar_configuracion()
+			
+				sock.setdata("DEBE CONFIGURAR PRIMERO CONFIGURACION IP!")
+			
+			
+			sock.send
+		
+			'End of BASIC code
+		?>
+	</BODY>
+</HTML>
