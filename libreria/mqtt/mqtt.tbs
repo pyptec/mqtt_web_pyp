@@ -27,7 +27,7 @@ const DISCONNECT 	=&hE0
 'mqtt protocol string
 const MQTT_LEVEL	=&h04
 const MQTT_PROTOCOL	="MQTT"
-const MQTT_CLIENT_ID= MQTT_APP_CLIENT_ID
+'const MQTT_CLIENT_ID= MQTT_APP_CLIENT_ID
 
 enum mqtt_state
 	ms_idle				=0,
@@ -44,6 +44,7 @@ dim mqtt_server_port as word
 dim mqtt_server_ip as string(15)
 dim mqtt_user as string(30)
 dim mqtt_pw	as string(23)
+dim mqtt_cliente_id	as string
 
 #if MQTT_DEBUG_PRINT=1
 	declare sub mqtt_debug_print(data as string)
@@ -126,9 +127,9 @@ sub mqtt_send_login()
 	dim buf as string	
 	
 	if ((mqtt_user = "") or (mqtt_pw = "")) then
-		buf=chr(&h0)+chr(len(MQTT_PROTOCOL))+MQTT_PROTOCOL+chr(MQTT_LEVEL)+chr(&h02)+chr(0)+chr(&h3c)+chr(0)+chr(len(MQTT_CLIENT_ID))+MQTT_CLIENT_ID
+		buf=chr(&h0)+chr(len(MQTT_PROTOCOL))+MQTT_PROTOCOL+chr(MQTT_LEVEL)+chr(&h02)+chr(0)+chr(&h3c)+chr(0)+chr(len(mqtt_cliente_id))+mqtt_cliente_id
 	else
-		buf=chr(&h0)+chr(len(MQTT_PROTOCOL))+MQTT_PROTOCOL+chr(MQTT_LEVEL)+chr(&hc2)+chr(0)+chr(&h3c)+chr(0)+chr(len(MQTT_CLIENT_ID))+MQTT_CLIENT_ID + chr(0)+chr(len(mqtt_user)) + mqtt_user + chr(0)+chr(len(mqtt_pw)) + mqtt_pw
+		buf=chr(&h0)+chr(len(MQTT_PROTOCOL))+MQTT_PROTOCOL+chr(MQTT_LEVEL)+chr(&hc2)+chr(0)+chr(&h3c)+chr(0)+chr(len(mqtt_cliente_id))+mqtt_cliente_id + chr(0)+chr(len(mqtt_user)) + mqtt_user + chr(0)+chr(len(mqtt_pw)) + mqtt_pw
 	end if
 	buf=chr(CONNECT)+mqtt_build_remaining_length(len(buf)) + buf
 
@@ -136,7 +137,7 @@ sub mqtt_send_login()
 	sock.send	
 end sub
 
-function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as string,byref password as string,keep_alive as byte) as ok_ng
+function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as string,byref password as string,keep_alive as byte,cliente as string) as ok_ng
 'API function, instructs the library to connect to the MQTT server (broker).<br><br>
 '<b>dst_ip</b>- the IP address of the MQTT server,<br>
 '<b>dst_port</b>- target port on the MATT server,<br>
@@ -152,11 +153,19 @@ function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as stri
 		exit function
 	end if
 
+
 	mqtt_server_port=dst_port
 	mqtt_server_ip=dst_ip
 	mqtt_user=user
 	mqtt_pw=password
-
+	mqtt_cliente_id=cliente
+	
+	sys.debugprint("mqtt_server_port = "+str(mqtt_server_port)+"\n")
+	sys.debugprint("mqtt_server_ip = "+mqtt_server_ip+"\n")
+	sys.debugprint("mqtt_user = "+mqtt_user+"\n")
+	sys.debugprint("mqtt_pw = "+mqtt_pw+"\n")
+	sys.debugprint("mqtt_cliente_id = "+mqtt_cliente_id+"\n")
+	
 	mqtt_keep_alive_timer=keep_alive*2  ' half second * 2
 
 	if (mqtt_call_connect() = PL_SSTS_EST) then
@@ -269,6 +278,7 @@ sub mqtt_sub(byref topic as string,qos as en_qos_choices)
 	
 	buf=mqtt_get_packet_identifier()+chr(0)+chr(len(topic))+topic+chr(qos)
 	buf=chr(SUBSCRIBE+2)+mqtt_build_remaining_length(len(buf)) + buf
+	'mqtt_debug_print("Subscribing to:jp buf="+buf)
 
 	sock.num=mqtt_sock_num
 	sock.setdata(buf)

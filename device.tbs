@@ -12,17 +12,34 @@ declare sub aceptar_configuracion()
 declare sub inicia_own_mqtt()
 declare function publica_informacion()as boolean
 declare sub inicia_mqtt_configurado()
+declare function Arreglo_string(data_string as string) as string
 '====================================================================
 'conectado al servidor mqtt propio
 sub callback_mqtt_connect_ok()
 	dim EE_lee_prog as byte
+	dim Suscritor  as string
+	dim longitud as word
 	pat.play(PAT_GREEN_ON,PL_PAT_CANINT)'led verde prendido
-	mqtt_sub("carullapoloclub/text",QOS_AT_MOST_ONCE) 'v1/devices/cliente1/# LED/#, QOS_AT_LEAST_ONCE
-	 EE_lee_prog=prog_read_eeprom(EEPROG_ADDR,1)
-	 if EE_lee_prog = 1 then
-		publica_informacion()
-		prog_write_eeprom_char(EEPROG_ADDR,0)
-	 end if 
+	EE_lee_prog=prog_read_eeprom(EEPROG_ADDR,1)
+	
+	sys.debugprint("programacion = "+hex(EE_lee_prog)+"\n")
+	if EE_lee_prog = 1 then
+	mqtt_sub("carullapoloclub/text",QOS_AT_MOST_ONCE) 'v1/devices/cliente1/# LED/#, QOS_AT_LEAST_ONCE	
+	'publica en el servidor pyp
+	publica_informacion()
+	prog_write_eeprom_char(EEPROG_ADDR,0)
+	mqtt_disconnect()
+	else if EE_lee_prog = 0 then
+		'lee el suscritor en eeprom
+		Suscritor = stor.getdata(EEMQTT_SUSCRITOR_ADDR,MQTT_SIZE_SUSCRITOR)
+		'arregla trama
+		Suscritor=Arreglo_string(Suscritor)
+		sys.debugprint("suscritor mqtt ="+Suscritor+"\n")
+		longitud=len(Suscritor)
+		sys.debugprint("longitud del suscritor mqtt ="+str(longitud)+"\n")
+		mqtt_sub(Suscritor,QOS_AT_MOST_ONCE) 'v1/devices/cliente1/# LED/#, QOS_AT_LEAST_ONCE	
+	end if
+	
 end sub
 
 sub callback_mqtt_connect_lost()
@@ -151,6 +168,31 @@ lendata=len(data_eewrite)
 num_data_write= stor.setdata(data_eewrite,addres_byte ) 'write EEPROM
 
 end sub
+
+'programo que quita los caracteres nulos
+function Arreglo_string(data_string as string) as string
+dim  lendata,i as byte
+dim data_eewrite as string
+
+'longitud de la trama inicial
+lendata=len(data_string)
+sys.debugprint("longitud trama inicial = "+str(lendata)+"\n")
+
+	for i=1 to lendata
+	data_eewrite=mid(data_string,i,1)
+	sys.debugprint("caracter de la trama = "+data_eewrite+"\n")
+	'busca el primer null en la cadena
+	if data_eewrite = "\0" then
+	'arma la nueva cadena
+		data_eewrite=mid(data_string,1,i-1)
+		sys.debugprint("trama arreglada = "+data_eewrite +"\n")
+		sys.debugprint("longitud trama final = "+str(len(data_eewrite))+"\n")
+		Arreglo_string=data_eewrite
+		exit function
+	end if
+	next i
+
+end function
 'formateo de la cadena y modifica el caracter cambiandolo por un (/)
 function formateo_argument(byref mqtt_subscritor as string, byref argument as string) as string
 
@@ -221,7 +263,7 @@ dim f as byte
 	
 end sub
 sub aceptar_configuracion()
-
+'programo la memoria para enviar la informacion al servidor programado
 	prog_write_eeprom_char(EEPROG_ADDR,01)
 	sys.halt
 	sys.reboot
@@ -231,8 +273,9 @@ sub inicia_own_mqtt()
 dim own_ip as string
 dim own_mask as string
 dim own_gateway as string 
+dim own_name_id as string	
 
-
+'lee los datos de la eeprom
 	own_ip=prog_read_eeprom(EEMQTT_OWN_IP_ADDR,MQTT_SIZE_HOST)
 	net.ip=own_ip
 	own_mask=prog_read_eeprom(EEMQTT_MASCARA_ADDR,MQTT_SIZE_HOST)
@@ -241,7 +284,7 @@ dim own_gateway as string
 	own_gateway=prog_read_eeprom(EEMQTT_GATEWAY_ADDR,MQTT_SIZE_HOST)
 	net.gatewayip=own_gateway
 	
-	
+	own_name_id="pypteclonuevoeniot"
 
 	pat.play(PAT_GREEN_BLINKING,PL_PAT_CANINT)
 
@@ -256,7 +299,7 @@ dim own_gateway as string
 	io.enabled=YES
 
 	mqtt_start()
-	if mqtt_connect(MQTT_SERVER_HOST,1883,MQTT_NAME,MQTT_PASSWORD,30)=NG then
+	if mqtt_connect(MQTT_SERVER_HOST,1883,MQTT_NAME,MQTT_PASSWORD,30,own_name_id)=NG then
 		'In here, we cannot make a tcp link to the host ...
 		connect_lost=YES
 	end if
@@ -300,4 +343,71 @@ dim trama as string
 end function
 sub inicia_mqtt_configurado()
 	
+dim own_ip as string
+dim own_mask as string
+dim own_gateway as string 
+dim own_server_host as string
+dim own_mqtt_name as string
+dim own_mqtt_password as string
+dim own_puerto 	as word
+dim own_name_id as string	
+dim lentrama as byte
+
+'lee los datos de la eeprom
+	
+	'ip addr
+	own_ip=prog_read_eeprom(EEMQTT_OWN_IP_ADDR,MQTT_SIZE_HOST)
+	net.ip=own_ip
+	sys.debugprint("own_ip = "+own_ip+"\n")
+	
+	'ip mask
+	own_mask=prog_read_eeprom(EEMQTT_MASCARA_ADDR,MQTT_SIZE_HOST)
+	net.netmask=own_mask
+	sys.debugprint("own_mask = "+own_mask+"\n")
+	
+	'ip puerta de enlace
+	own_gateway=prog_read_eeprom(EEMQTT_GATEWAY_ADDR,MQTT_SIZE_HOST)
+	net.gatewayip=own_gateway
+	sys.debugprint("own_gateway = "+own_gateway+"\n")
+	
+	'ip servidor
+	own_server_host=prog_read_eeprom(EEMQTT_HOST_ADDR,MQTT_SIZE_HOST)
+	sys.debugprint("own_server_host = "+own_server_host+"\n")
+	lentrama=len(own_server_host)
+	sys.debugprint("longitud own_server_host = "+str(lentrama)+"\n")
+	
+	'usuario
+	own_mqtt_name=stor.getdata(EEMQTT_USUARIO_ADDR,MQTT_SIZE_USUARIO)
+	sys.debugprint("own_mqtt_name = "+own_mqtt_name+"\n")
+	
+	'password
+	own_mqtt_password=stor.getdata(EEMQTT_PASS_ADDR,MQTT_SIZE_PASS)
+	sys.debugprint("own_mqtt_password = "+own_mqtt_password+"\n")
+	
+	'puerto mqtt
+	own_puerto=lval(stor.getdata(EEMQTT_PTO_ADDR,MQTT_SIZE_PTO))
+	sys.debugprint("own_puerto = "+str(own_puerto)+"\n")
+	
+	'nombre servidor
+	own_name_id= stor.getdata(EEMQTT_CLIENTE_ID_ADDR,MQTT_SIZE_CLIENTE)
+	sys.debugprint("own_nombre_id = "+own_name_id+"\n")
+	
+	pat.play(PAT_GREEN_BLINKING,PL_PAT_CANINT)
+
+		
+	io.num=RELE1_GPIO2
+	io.state=LOW
+	io.enabled=YES
+
+
+	io.num=RELE2_GPIO3
+	io.state=LOW
+	io.enabled=YES
+
+	mqtt_start()
+	if mqtt_connect(MQTT_SERVER_HOST,own_puerto,own_mqtt_name,own_mqtt_password,30,own_name_id)=NG then
+	' if mqtt_connect(own_server_host,own_puerto,own_mqtt_name,own_mqtt_password,30,own_name_id)=NG then
+		'In here, we cannot make a tcp link to the host ...
+		connect_lost=YES
+	end if
 end sub

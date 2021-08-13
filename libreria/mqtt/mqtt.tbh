@@ -45,8 +45,9 @@ end enum
 declare sub mqtt_start()
 'API procedure, starts the MQTT library.
 'MUST be called first, before any other procedure in this library is used.
-
-declare function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as string,byref password as string,keep_alive as byte) as ok_ng
+declare function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as string,byref password as string,keep_alive as byte,cliente as string) as ok_ng
+'se adiciona el nombre del servidor
+'declare function mqtt_connect(byref dst_ip as string,dst_port as word,byref user as string,byref password as string,keep_alive as byte) as ok_ng
 'API function, instructs the library to connect to the MQTT server (broker).<br><br>
 '<b>dst_ip</b>- the IP address of the MQTT server,<br>
 '<b>dst_port</b>- target port on the MATT server,<br>

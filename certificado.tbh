@@ -1,7 +1,7 @@
 'DEFINES-------------------------------------------------------------
 
 #define MQTT_DEBUG_PRINT 1
-#define MQTT_APP_CLIENT_ID "pypteclonuevoeniot"
+'#define MQTT_APP_CLIENT_ID "pypteclonuevoenio"
 
 const RELE1_GPIO2		=PL_IO_NUM_2
 const RELE2_GPIO3		=PL_IO_NUM_3
@@ -29,13 +29,22 @@ const EEMQTT_HOST_ADDR=75					' direccion ip del broker mqtt maximo 4 digitos
 const EEMQTT_PTO_ADDR =80					' direccion del pto  maximo 4
 const EEMQTT_SUSCRITOR_ADDR=85				'nombre del suscritor maximo 32 digitos
 const EEMQTT_PUBLICADOR_ADDR=118			'nombre del publicador maximo 32 digitos
-const EEMQTT_PASS_ADDR=152					'password del brouker mqtt maximo 12 digitos
-const EEMQTT_CLIENTE_ID_ADDR=166			'Nombre del cliente maximo 18 caracteres
+const EEMQTT_PASS_ADDR=152					'password del brouker mqtt maximo 16 digitos
+const EEMQTT_CLIENTE_ID_ADDR=170			'Nombre del cliente maximo 18 caracteres
+
+
+const EEMQTT_SIZE_CLIENTE =171
+const EEMQTT_SIZE_USUARIO =172
+const EEMQTT_SIZE_PASS=173
+const EEMQTT_SIZE_OWN_IP=174
+const EEMQTT_SIZE_MASCARA=175
+const EEMQTT_SIZE_SUSCRITOR=176
+const EEMQTT_SIZE_PUBLICADOR=177
 
 enum tamano_datos_prog_mqtt
 	MQTT_SIZE_CLIENTE=18,
 	MQTT_SIZE_USUARIO=8,
-	MQTT_SIZE_PASS=12,
+	MQTT_SIZE_PASS=16,
 	MQTT_SIZE_OWN_IP=4,
 	MQTT_SIZE_MASCARA=4,
 	MQTT_SIZE_GATEWAY=4,
@@ -51,10 +60,12 @@ declare sub prog_write_eeprom(addres_byte as byte,data_string as string,longData
 declare sub prog_write_eeprom_string(addres_byte as byte,data_string as string,longData_byte as byte)
 declare function formateo_argument(byref mqtt_subscritor as string, byref argument as string) as string
 declare sub aceptar_configuracion()
+'declare sub sub Arreglo_string(data_string as string)
 'INCLUDES------------------------------------------------------------
-
-include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\mqtt\mqtt.tbh"
-include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\sock\sock.tbh"
+include "C:\desarrollo\Acceso jp\mqtt_web_pyp\libreria\mqtt\mqtt.tbh"
+include "C:\desarrollo\Acceso jp\mqtt_web_pyp\libreria\sock\sock.tbh"
+'include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\mqtt\mqtt.tbh"
+'include "C:\desarrollo\Acceso jp\pruebas\mqttsecurity\libreria\sock\sock.tbh"
 'DECLARATIONS--------------------------------------------------------
 
 declare connect_lost as no_yes
