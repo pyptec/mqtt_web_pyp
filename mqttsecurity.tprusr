@@ -6,7 +6,7 @@ cursor=1285
 opened=yes
 breakpoints=
 [file2]
-line=54
+line=24
 cursor=2732
 opened=yes
 breakpoints=
@@ -21,13 +21,13 @@ cursor=628
 opened=yes
 breakpoints=
 [file5]
-line=349
-cursor=11735
+line=58
+cursor=8659
 opened=active
 breakpoints=
 [file6]
-line=276
-cursor=8080
+line=18
+cursor=911
 opened=yes
 breakpoints=
 [file7]
