@@ -4,13 +4,13 @@ platform=EM500W
 src_lib_ver=2_01_04
 name=mqttsecurity
 output=mqttsecurity.tpc
-debug=on
+debug=off
 defines=/dOBJECT_FD=FD_DISABLED 
 transport=udp_broadcast
 [address1]
 platform=EM500W
 transport=udp_broadcast
-address=0.36.119.83.53.84
+address=0.36.119.87.9.211
 [address2]
 platform=EM500W
 transport=udp_winpcap
