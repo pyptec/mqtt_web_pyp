@@ -51,9 +51,11 @@ end sub
 sub callback_mqtt_notif(byref topic as string,byref data as string)
 	
 	
-	dim x as string
-	 x=ultimo_slash_cadena(topic)
+	dim x, y as string
+	' x=ultimo_slash_cadena(topic)
 	'x=mid(topic,17,7)
+	x=mid(topic,9,7)
+	y=mid(topic,9,7)
 	sys.debugprint("dato recivido "+x+chr(10)+chr(14))
 	'if x<>STR_LED then exit sub
 	
@@ -61,7 +63,7 @@ sub callback_mqtt_notif(byref topic as string,byref data as string)
 	 if x="entrada" then
 		io.num=RELE1_GPIO2
 		mqtt_data(data)
-	else if x="salida" then
+	else if y="salida/" then
 		io.num=RELE2_GPIO3
 		mqtt_data(data)
 	end if
@@ -74,7 +76,7 @@ end sub
 sub mqtt_data(byref data as string)
 	dim w as word
 	dim y as byte
-	if data ="1" then
+	if data ="ON" then		'1
 		
 		 w=sys.timercount
 		 io.state= HIGH
@@ -83,7 +85,7 @@ sub mqtt_data(byref data as string)
 			if sys.timercount-w>1 then
 				y=2
 				io.state= LOW
-				mqtt_publish("carullapoloclub/text","barrera ok",QOS_AT_MOST_ONCE)
+				'mqtt_publish("carullapoloclub/text","barrera ok",QOS_AT_MOST_ONCE)
 				doevents
 			end if
 		wend
@@ -280,7 +282,7 @@ dim f as byte
 end sub
 sub aceptar_configuracion()
 'programo la memoria para enviar la informacion al servidor programado
-	prog_write_eeprom_char(EEPROG_ADDR,01)
+	prog_write_eeprom_char(EEPROG_ADDR,00)	'antes era 01
 	sys.halt
 	sys.reboot
 end sub
